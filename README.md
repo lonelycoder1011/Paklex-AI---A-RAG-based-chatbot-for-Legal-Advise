@@ -1,4 +1,4 @@
-# ⚖️ PakLex AI — Pakistan Legal Intelligence Platform
+# ⚖️ PakLex AI — A RAG based local chatbot for Legal Advice
 
 > AI-powered RAG legal assistant for Pakistan law. Fully local, private, and production-ready.
 

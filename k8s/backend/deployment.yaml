@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paklex-backend
+  namespace: paklex
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: paklex-backend
+  template:
+    metadata:
+      labels:
+        app: paklex-backend
+    spec:
+      containers:
+        - name: backend
+          image: paklex/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OLLAMA_BASE_URL
+              value: "http://paklex-ollama:11434"
+            - name: CHROMA_HOST
+              value: "paklex-chromadb"
+            - name: CHROMA_PORT
+              value: "8000"
+            - name: OLLAMA_MODEL
+              value: "llama3.2:1b"
+            - name: EMBEDDING_MODEL
+              value: "nomic-embed-text"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paklex-backend
+  namespace: paklex
+spec:
+  selector:
+    app: paklex-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

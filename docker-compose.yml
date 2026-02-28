@@ -1,0 +1,97 @@
+version: "3.9"
+
+networks:
+  paklex-net:
+    driver: bridge
+
+volumes:
+  chroma_data:
+  ollama_data:
+
+services:
+  # ─── Ollama (Local LLM) ────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: paklex-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - paklex-net
+    restart: unless-stopped
+
+  # ─── ChromaDB (Vector Store) ───────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:0.5.3
+    container_name: paklex-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_AUTH_CREDENTIALS_PROVIDER=chromadb.auth.token.TokenConfigServerAuthCredentialsProvider
+      - ANONYMIZED_TELEMETRY=false
+    networks:
+      - paklex-net
+    restart: unless-stopped
+
+  # ─── FastAPI Backend ───────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paklex-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - OLLAMA_MODEL=llama3.2:1b
+      - EMBEDDING_MODEL=nomic-embed-text
+      - COLLECTION_NAME=pakistan_laws
+      - LOG_LEVEL=info
+    depends_on:
+      - ollama
+      - chromadb
+    networks:
+      - paklex-net
+    restart: unless-stopped
+    volumes:
+      - ./backend/data:/app/data
+
+  # ─── Next.js Frontend ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
+    container_name: paklex-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - paklex-net
+    restart: unless-stopped
+
+  # ─── Nginx Reverse Proxy ───────────────────────────────────────
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: paklex-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - paklex-net
+    restart: unless-stopped

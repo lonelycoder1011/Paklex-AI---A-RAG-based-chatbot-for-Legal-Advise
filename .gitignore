@@ -1,0 +1,68 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/.vercel
+
+# Python
+backend/venv/
+backend/.venv/
+backend/*.egg-info/
+backend/__pycache__/
+
+# Data & Models
+chromadb/data/
+ollama/models/
+backend/data/raw/
+*.pdf
+*.pkl
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Docker
+*.dockerignore
+
+# Kubernetes secrets
+k8s/secrets/
+
+# Misc
+.cache/
+tmp/
+temp/

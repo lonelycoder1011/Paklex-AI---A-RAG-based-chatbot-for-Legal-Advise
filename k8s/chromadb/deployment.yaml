@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chromadb-pvc
+  namespace: paklex
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paklex-chromadb
+  namespace: paklex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paklex-chromadb
+  template:
+    metadata:
+      labels:
+        app: paklex-chromadb
+    spec:
+      containers:
+        - name: chromadb
+          image: chromadb/chroma:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ANONYMIZED_TELEMETRY
+              value: "false"
+          volumeMounts:
+            - name: chroma-storage
+              mountPath: /chroma/chroma
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+      volumes:
+        - name: chroma-storage
+          persistentVolumeClaim:
+            claimName: chromadb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paklex-chromadb
+  namespace: paklex
+spec:
+  selector:
+    app: paklex-chromadb
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
